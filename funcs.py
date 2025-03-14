@@ -46,7 +46,6 @@ class Character: # this class handles everything related to processing informati
         self.char_name=c_name
         self.construct_StatsProficiencies()
 # END OF CONSTRUCTOR FUNCS ---------------------------------------------------------------------------------
-# it can put saves in, but it can't take them out
 # DESTRUCTOR FUNCS -----------------------------------------------------------------------------------------
     def saveStatsProfBProfs(self): # unofficial destructor. Might have to main one in main.py
         with open(os.path.join(os.getcwd(), "characters", self.char_name, "stats.txt"), 'w') as stats_file:
