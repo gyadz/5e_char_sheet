@@ -66,7 +66,6 @@ class Character: # this class handles everything related to processing informati
                 if stat!="cha": # don't need the extra . at the end, just leads to an extra empty string
                     stats_file.write('.')
         stats_file.close()
-#-----------------------------------------------------------------------------------------------------------
 # FUNCTIONALITY -------------------------------------------------------------------------------------------
     def roll(self, ndice, tdice):
         rolls=[]
