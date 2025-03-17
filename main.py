@@ -7,8 +7,12 @@ import tkinter as tk
 #   light/dark mode
 # Do I want commandline things like in roll20 along with the buttons?
 
-def eraseWindow():
-    for widget in window.winfo_children():
+# issues with implementing the canvas over the entire project:
+#   eraseCanvas() function will erase the canvas. I can probably just change it to eraseCanvas()
+#   
+
+def eraseCanvas(): # should be working, not sure what the problem is
+    for widget in canvas.winfo_children():
         widget.destroy()
 # CLASS MANAGEMENT --------------------------
 def createP1Class():
@@ -21,7 +25,7 @@ def deleteClass(item): # called in a lambda. Lambda can't call del, so I gotta d
 def stripStar(stat):
     return stat if stat[0]!='*' else stat[1:]
 # STUFF THAT ROLLS DICE -----------------------------------------------------------------------------------------
-def makeCheckSave(user, stat, skill, type, apply_proficiency): # holy fuck it works
+def makeCheckSave(user, stat, skill, type, apply_proficiency):
     roll=user.roll(1, 20)[0]
     total=int(roll+(user.stats[stat]-10)/2) # int() strips decimals
     if apply_proficiency:
@@ -63,7 +67,7 @@ def editProfsAction(user, stat, skill):
         i+=1
     
 def editProfsMenu(user, type, stat):
-    eraseWindow()
+    eraseCanvas()
 
     label=tk.Label(window, text=f"Select {type} to add/remove:", bg="black", fg="white", font=("Times New Roman", 12))
     label.grid(column=0, row=0, columnspan=3, sticky="w")
@@ -156,19 +160,14 @@ def displayStat(user, stat, value, row, frame):
     entry.grid(column=0, row=row+1)
 # CHARACTER SHEET --------------------------------------------------------------------------------------------------------------
 def selectChar(user): # displays character sheet
-    eraseWindow()
+    eraseCanvas()
     # NOTE: p1 is deleted here and must be reconstructed before main() is called again
 # col 4 I will reserve as a buffer
-    canvas=tk.Canvas(window)
-    canvas.pack(side="left", fill="both", expand=True)
-    vsb=tk.Scrollbar(window, orient="vertical", command=canvas.yview)
-    vsb.pack(side="right", fill="y") 
-
-    canvas.configure(yscrollcommand=vsb.set)
+# rename/refactor? Seperate stats/profs/saves into different frames? Will do that in a bit, 
+# gotta fix the first menu
     frame=tk.Frame(canvas)
-    canvas.create_window((0, 0), window=frame, anchor="nw")
+    canvas.create_window((0,0), window=frame, anchor="nw")
     frame.config(bg="black")
-    canvas.config(bg="black")
 
     displayProfBonus(user, frame)
     displaySaves(user, frame)
@@ -181,14 +180,13 @@ def selectChar(user): # displays character sheet
         label.grid(column=0, row=row, columnspan=3)
         row+=1
     #print(row) this outputs fucking 43. Whaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaatever
-    button=tk.Button(frame, text="Save", bg="black", fg="white", command=lambda: (user.saveStatsProfBProfs(), deleteClass(user), main(createP1Class())))
+    button=tk.Button(frame, text="Save", bg="black", fg="white", command=lambda: (user.saveStatsProfBProfs(), deleteClass(user), mainMenu(createP1Class())))
     button.grid(column=5, row=6) # will move this to the bottom I guess
     # NOTE: ^ this exists
 
     frame.update_idletasks()
-    canvas.config(scrollregion=canvas.bbox("all"))
 # --------------------------------------------------------------------------------------------------------------
-def deleteChar(p1, c_name):
+def deleteChar(p1, c_name): # CONVERTED < NOTE delete when done
     popout=tk.Toplevel(window)
     popout.geometry("200x150")
     popout.config(bg="black")
@@ -196,47 +194,54 @@ def deleteChar(p1, c_name):
     label=tk.Label(popout, text="Deleting a character\nCANNOT be undone. Continue?", bg="black", fg="white")
     label.grid()
 
-    button=tk.Button(popout, text="Cancel", bg="black", fg="white", command=lambda: editMenu(p1))
+    button=tk.Button(popout, text="Cancel", bg="black", fg="white", command=lambda: (popout.destroy(), editMenu(p1)))
     button.grid()
-    button=tk.Button(popout, text="Continue", bg="black", fg="white", command=lambda: (p1.deleteChar(c_name), main(p1)))
+    button=tk.Button(popout, text="Continue", bg="black", fg="white", command=lambda: (popout.destroy(), p1.deleteChar(c_name), mainMenu(p1)))
     button.grid()
 
-def editChar(p1, c_name):
-    eraseWindow()
+def editChar(p1, c_name): # CONVERTED < NOTE delete when done
+    eraseCanvas()
 
-    label=tk.Label(window, text="Character name:", bg="black", fg="white", font=("Times New Roman", 12))
+    editC_frame=tk.Frame(canvas)
+    canvas.create_window((0,0), window=editC_frame, anchor="nw")
+    editC_frame.config(bg="black")
+
+    label=tk.Label(editC_frame, text="Character name:", bg="black", fg="white", font=("Times New Roman", 12))
     label.grid(column=0, row=0, pady=7, columnspan=2, sticky="w")
 
-    entry=tk.Entry(window)
+    entry=tk.Entry(editC_frame)
     entry.insert(0, c_name)
     entry.grid(column=0, row=1, pady=10, columnspan=2, sticky="w")
 
-    window.bind('<Return>', lambda event: (p1.editChar(c_name, entry.get()), main(p1)))
-    button=tk.Button(window, text="Submit", bg="black", fg="white", command=lambda: (p1.editChar(c_name, entry.get()), main(p1)))
+    editC_frame.bind('<Return>', lambda event: (p1.editChar(c_name, entry.get()), mainMenu(p1)))
+    button=tk.Button(editC_frame, text="Submit", bg="black", fg="white", command=lambda: (p1.editChar(c_name, entry.get()), mainMenu(p1)))
     button.grid(column=1, row=2)
-    button=tk.Button(window, text="Cancel", bg="black", fg="white", command=lambda: main(p1))
+    button=tk.Button(editC_frame, text="Cancel", bg="black", fg="white", command=lambda: mainMenu(p1))
     button.grid(column=0, row=2)
-    button=tk.Button(window, text="Delete", bg="black", fg="red", command=lambda: deleteChar(p1, c_name))
+    button=tk.Button(editC_frame, text="Delete", bg="black", fg="red", command=lambda: deleteChar(p1, c_name))
     button.grid(column=0, row=3, pady=10, columnspan=2, sticky="nsew")
 
-def editMenu(p1):
-    eraseWindow()
+def editMenu(p1): # CONVERTED < NOTE delete when done
+    eraseCanvas()
 
-    label=tk.Label(window, text="Select character to edit:", bg="black", fg="white", font=("Times New roman", 15))
+    editM_frame=tk.Frame(canvas)
+    canvas.create_window((0,0), window=editM_frame, anchor="nw")
+    editM_frame.config(bg="black")
+
+    label=tk.Label(editM_frame, text="Select character to edit:", bg="black", fg="white", font=("Times New roman", 15))
     label.grid(column=0, row=0, pady=10, sticky="w")
 
     # listing characters
     i=1
     for item in os.listdir(p1.mdir):
-        button=tk.Button(window, text=item, bg="black", fg="white", command=lambda c_name=item: editChar(p1, c_name))
+        button=tk.Button(editM_frame, text=item, bg="black", fg="white", command=lambda c_name=item: editChar(p1, c_name))
         button.grid(column=0, row=i, pady=5, sticky="w")
         i+=1
     
-    window.rowconfigure(i+1, minsize=50)
-    button=tk.Button(window, text="Back", bg="black", fg="white", command=lambda: main(p1))
-    button.grid(column=0, row=i+2, pady=10, sticky="w")
+    button=tk.Button(editM_frame, text="Back", bg="black", fg="white", command=lambda: mainMenu(p1))
+    button.grid(column=0, row=i+2, pady=50, sticky="w")
 
-def newChar(p1):
+def newChar(p1): # CONVERTED < NOTE delete when done
     popout=tk.Toplevel(window)
     popout.geometry("200x150")
     popout.config(bg="black")
@@ -251,46 +256,57 @@ def newChar(p1):
 # lambda takes the event parameter because when an event happens, tkinter passes an event object to the event
 # handler, in this case the lambda
     # buttons handling inputs
-    popout.bind('<Escape>', lambda event: (popout.destroy(), main(p1)))
-    popout.bind('<Return>', lambda event: (p1.createChar(entry.get()), popout.destroy(), main(p1)))
-    button=tk.Button(popout, text="Submit", command=lambda: (p1.createChar(entry.get()), popout.destroy(), main(p1)))
+    popout.bind('<Escape>', lambda event: (popout.destroy(), mainMenu(p1)))
+    popout.bind('<Return>', lambda event: (p1.createChar(entry.get()), popout.destroy(), mainMenu(p1)))
+    button=tk.Button(popout, text="Submit", command=lambda: (p1.createChar(entry.get()), popout.destroy(), mainMenu(p1)))
     button.grid()
 
-def main(p1):
-    eraseWindow()
+def mainMenu(p1): # CONVERTED < NOTE delete when done
+    eraseCanvas()
+
+    main_frame=tk.Frame(canvas)
+    canvas.create_window((0,0), window=main_frame, anchor="nw")
+    main_frame.config(bg="black")
 
     # listing characters
-    label=tk.Label(window, text="Characters:", bg="black", fg="white", font=("Times New Roman", 15))
+    label=tk.Label(main_frame, text="Characters:", bg="black", fg="white", font=("Times New Roman", 15))
     label.grid(column=0, row=0, pady=5, sticky="w")
     i=1
-    for item in os.listdir(p1.mdir): # list of chars
-        button=tk.Button(window, text=item, bg="black", fg="white", command=lambda char_name=item: (deleteClass(p1), selectChar(createUserClass(char_name))))
+    for item in os.listdir(p1.mdir): 
+        button=tk.Button(main_frame, text=item, bg="black", fg="white", command=lambda char_name=item: (deleteClass(p1), selectChar(createUserClass(char_name))))
         button.grid(column=0, row=i, pady=2, sticky="w")
         i+=1
     
-    # tutorial messages
-    window.columnconfigure(2, minsize=125) # adding some whitespace between tutorial messages and everything else
-    label=tk.Label(window, text="Welcome! Thanks for using this app :)", bg="black", fg="white", font=("Times New Roman", 12))
+    main_frame.columnconfigure(2, minsize=125) # adding some whitespace between tutorial messages and everything else
+    label=tk.Label(main_frame, text="Welcome! Thanks for using this app :)", bg="black", fg="white", font=("Times New Roman", 12))
     label.grid(column=3, row=1)
-    label=tk.Label(window, text="To select a character, use the associated button", bg="black", fg="white", font=("Times New Roman", 12))
+    label=tk.Label(main_frame, text="To select a character, use the associated button", bg="black", fg="white", font=("Times New Roman", 12))
     label.grid(column=3, row=2)
-    label=tk.Label(window, text="To create a new character, select the NEW button", bg="black", fg="white", font=("Times New Roman", 12))
+    label=tk.Label(main_frame, text="To create a new character, select the NEW button", bg="black", fg="white", font=("Times New Roman", 12))
     label.grid(column=3, row=3)
-    label=tk.Label(window, text="To edit character names/pictures and to delete characters,\nselect the EDIT button", bg="black", fg="white", font=("Times New Roman", 12))
+    label=tk.Label(main_frame, text="To edit character names/pictures and to delete characters,\nselect the EDIT button", bg="black", fg="white", font=("Times New Roman", 12))
     label.grid(column=3, row=4)
 
     # new/edit buttons. inline row logic ensures it remains beneath the tutorial messages
-    button=tk.Button(window, text="new", bg="black", fg="white", command=lambda: newChar(p1)) 
+    button=tk.Button(main_frame, text="new", bg="black", fg="white", command=lambda: newChar(p1)) 
     button.grid(column=0, row=5 if i<5 else i+1, pady=25, sticky="w")
-    button=tk.Button(window, text="Edit", bg="black", fg="white", command=lambda: editMenu(p1))
+    button=tk.Button(main_frame, text="Edit", bg="black", fg="white", command=lambda: editMenu(p1))
     button.grid(column=1, row=5 if i<5 else i+1, sticky="e")
+    main_frame.update_idletasks()
 #------------------------------------------------------------------------------------------------------------
 window=tk.Tk()
 window.geometry("900x600")
 window.title("Dumb App for Dumb Stupid Dumb Dumbs")
 window.config(bg="black")
-# could (should) probably move the canvas/frame stuff out here
+
+canvas=tk.Canvas(window)
+canvas.pack(side="left", fill="both", expand=True)
+vsb=tk.Scrollbar(window, orient="vertical", command=canvas.yview)
+vsb.pack(side="right", fill="y") 
+canvas.configure(yscrollcommand=vsb.set)
+canvas.config(scrollregion=canvas.bbox("all"))
+canvas.config(bg="black")
 
 p1=Init()
-main(p1)
+mainMenu(p1)
 window.mainloop()
