@@ -1,13 +1,17 @@
 import os
+import random
+import tkinter as tk
+
 from funcs import Character
 from funcs import Init
-import tkinter as tk
+
 
 # settings to change:
 #   light/dark mode
 # Do I want commandline things like in roll20 along with the buttons?
 
-def eraseCanvas():
+def eraseCanvas(): # I imagine there is a better method that doesn't erase and rewrite the entire page every time
+    # I move between different sections of the code
     for widget in canvas.winfo_children():
         widget.destroy()
 # CLASS MANAGEMENT --------------------------
@@ -21,8 +25,14 @@ def deleteClass(item): # called in a lambda. Lambda can't call del, so I gotta d
 def stripStar(stat):
     return stat if stat[0]!='*' else stat[1:]
 # STUFF THAT ROLLS DICE -----------------------------------------------------------------------------------------
+def roll(self, ndice, tdice):
+    rolls=[]
+    for num in range(ndice):
+        rolls.append(random.randint(1, tdice))
+    return rolls
+
 def makeCheckSave(user, stat, skill, type, apply_proficiency):
-    roll=user.roll(1, 20)[0]
+    roll=roll(1, 20)[0] # this returns a list, so I'm just taking the first (and only) element
     total=int(roll+(user.stats[stat]-10)/2) # int() strips decimals
     if apply_proficiency:
         for item in user.proficiencies[stat]:
@@ -50,6 +60,10 @@ def makeCheckSave(user, stat, skill, type, apply_proficiency):
     label.grid(column=0, row=row, columnspan=2, sticky="w")
     label=tk.Label(popout, text=f"Total: {total}", bg="black", fg="white", font=("Times New Roman", 11))
     label.grid(column=0, row=row+1, columnspan=2, sticky="w")
+
+    # I'd love to include these two but they're not working and I don't know why
+   # popout.bind('<Return>', lambda event: popout.destroy())
+   # popout.bind('<Escape>', lambda event: popout.destroy())
 # MANAGE STATS/PROFS/SAVES --------------------------------------------------------------------------------------
 def editProfsAction(user, stat, skill):
     i=0
@@ -65,14 +79,18 @@ def editProfsAction(user, stat, skill):
 def editProfsMenu(user, type, stat):
     eraseCanvas()
 
-    label=tk.Label(window, text=f"Select {type} to add/remove:", bg="black", fg="white", font=("Times New Roman", 12))
+    editProfs_frame=tk.Frame(canvas)
+    canvas.create_window((0,0), window=editProfs_frame, anchor="nw")
+    editProfs_frame.config(bg="black")
+
+    label=tk.Label(editProfs_frame, text=f"Select {type} to add/remove:", bg="black", fg="white", font=("Times New Roman", 12))
     label.grid(column=0, row=0, columnspan=3, sticky="w")
 
     col=0
     row=1
     if stat=="saves": # if it's editing saves
         for stat in user.proficiencies: # repeated code
-            button=tk.Button(window, text=user.proficiencies[stat][0], bg="black", fg="white", command=lambda stat_name=stat, stripped_S_name=stripStar(user.proficiencies[stat][0]): (editProfsAction(user, stat_name, stripped_S_name), selectChar(user)))
+            button=tk.Button(editProfs_frame, text=user.proficiencies[stat][0], bg="black", fg="white", command=lambda stat_name=stat, stripped_S_name=stripStar(user.proficiencies[stat][0]): (editProfsAction(user, stat_name, stripped_S_name), selectChar(user)))
             button.grid(column=col, row=row, sticky="w")
             col+=1
             if col>2:
@@ -80,14 +98,14 @@ def editProfsMenu(user, type, stat):
                 col=0
     else: # if it's editing general skills
         for item in user.proficiencies[stat][1:]:
-            button=tk.Button(window, text=item, bg="black", fg="white", command=lambda stat_name=stat, stripped_S_name=stripStar(item): (editProfsAction(user, stat, stripped_S_name), selectChar(user)))
+            button=tk.Button(editProfs_frame, text=item, bg="black", fg="white", command=lambda stat_name=stat, stripped_S_name=stripStar(item): (editProfsAction(user, stat, stripped_S_name), selectChar(user)))
             button.grid(column=col, row=row, sticky="ew")
             col+=1
             if col>2:
                 row+=1
                 col=0
 
-    button=tk.Button(window, text="Back", bg="black", fg="white", command=lambda: selectChar(user))
+    button=tk.Button(editProfs_frame, text="Back", bg="black", fg="white", command=lambda: selectChar(user))
     button.grid(column=0, row=row+1, pady=15, sticky="w")
 # DISPLAY STATS/PROFS/SAVES -------------------------------------------------------------------------------------
 # wups forgot about this shit. Will fix later
@@ -177,11 +195,12 @@ def selectChar(user): # displays character sheet
         label.grid(column=0, row=row, columnspan=3)
         row+=1
     #print(row) this outputs fucking 43. Whaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaatever
-    button=tk.Button(frame, text="Save", bg="black", fg="white", command=lambda: (user.saveStatsProfBProfs(), deleteClass(user), mainMenu(createP1Class())))
+    button=tk.Button(frame, text="Save", bg="black", fg="white", command=lambda: (user.saveAll(), deleteClass(user), mainMenu(createP1Class())))
     button.grid(column=5, row=6) # will move this to the bottom I guess
     # NOTE: ^ this exists
 
     frame.update_idletasks()
+    canvas.config(scrollregion=canvas.bbox("all")) # this needs to be everywhere apparently
 # --------------------------------------------------------------------------------------------------------------
 def deleteChar(p1, c_name):
     popout=tk.Toplevel(window)
@@ -290,6 +309,7 @@ def mainMenu(p1):
     button=tk.Button(main_frame, text="Edit", bg="black", fg="white", command=lambda: editMenu(p1))
     button.grid(column=1, row=5 if i<5 else i+1, sticky="e")
     main_frame.update_idletasks()
+    canvas.config(scrollregion=canvas.bbox("all"))
 #------------------------------------------------------------------------------------------------------------
 window=tk.Tk()
 window.geometry("900x600")
@@ -301,7 +321,6 @@ canvas.pack(side="left", fill="both", expand=True)
 vsb=tk.Scrollbar(window, orient="vertical", command=canvas.yview)
 vsb.pack(side="right", fill="y") 
 canvas.configure(yscrollcommand=vsb.set)
-canvas.config(scrollregion=canvas.bbox("all"))
 canvas.config(bg="black")
 
 p1=Init()
