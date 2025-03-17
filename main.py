@@ -7,11 +7,7 @@ import tkinter as tk
 #   light/dark mode
 # Do I want commandline things like in roll20 along with the buttons?
 
-# issues with implementing the canvas over the entire project:
-#   eraseCanvas() function will erase the canvas. I can probably just change it to eraseCanvas()
-#   
-
-def eraseCanvas(): # should be working, not sure what the problem is
+def eraseCanvas():
     for widget in canvas.winfo_children():
         widget.destroy()
 # CLASS MANAGEMENT --------------------------
@@ -94,6 +90,7 @@ def editProfsMenu(user, type, stat):
     button=tk.Button(window, text="Back", bg="black", fg="white", command=lambda: selectChar(user))
     button.grid(column=0, row=row+1, pady=15, sticky="w")
 # DISPLAY STATS/PROFS/SAVES -------------------------------------------------------------------------------------
+# wups forgot about this shit. Will fix later
 def displayProfBonus(user, frame):
     label=tk.Label(frame, text=f"Proficiency Bonus:", bg="black", fg="white", font=("Times New Roman", 10))
     label.grid(column=0, row=0, columnspan=3, sticky="w")
@@ -186,7 +183,7 @@ def selectChar(user): # displays character sheet
 
     frame.update_idletasks()
 # --------------------------------------------------------------------------------------------------------------
-def deleteChar(p1, c_name): # CONVERTED < NOTE delete when done
+def deleteChar(p1, c_name):
     popout=tk.Toplevel(window)
     popout.geometry("200x150")
     popout.config(bg="black")
@@ -199,7 +196,7 @@ def deleteChar(p1, c_name): # CONVERTED < NOTE delete when done
     button=tk.Button(popout, text="Continue", bg="black", fg="white", command=lambda: (popout.destroy(), p1.deleteChar(c_name), mainMenu(p1)))
     button.grid()
 
-def editChar(p1, c_name): # CONVERTED < NOTE delete when done
+def editChar(p1, c_name):
     eraseCanvas()
 
     editC_frame=tk.Frame(canvas)
@@ -221,7 +218,7 @@ def editChar(p1, c_name): # CONVERTED < NOTE delete when done
     button=tk.Button(editC_frame, text="Delete", bg="black", fg="red", command=lambda: deleteChar(p1, c_name))
     button.grid(column=0, row=3, pady=10, columnspan=2, sticky="nsew")
 
-def editMenu(p1): # CONVERTED < NOTE delete when done
+def editMenu(p1):
     eraseCanvas()
 
     editM_frame=tk.Frame(canvas)
@@ -241,7 +238,7 @@ def editMenu(p1): # CONVERTED < NOTE delete when done
     button=tk.Button(editM_frame, text="Back", bg="black", fg="white", command=lambda: mainMenu(p1))
     button.grid(column=0, row=i+2, pady=50, sticky="w")
 
-def newChar(p1): # CONVERTED < NOTE delete when done
+def newChar(p1):
     popout=tk.Toplevel(window)
     popout.geometry("200x150")
     popout.config(bg="black")
@@ -261,7 +258,7 @@ def newChar(p1): # CONVERTED < NOTE delete when done
     button=tk.Button(popout, text="Submit", command=lambda: (p1.createChar(entry.get()), popout.destroy(), mainMenu(p1)))
     button.grid()
 
-def mainMenu(p1): # CONVERTED < NOTE delete when done
+def mainMenu(p1):
     eraseCanvas()
 
     main_frame=tk.Frame(canvas)
