@@ -4,6 +4,8 @@ import shutil
 import random
 
 class Character: # this class handles everything related to processing information related to characters
+    char_name="" # character directory
+
     prof_bonus=0 
     stats={
         "str":0, "dex":0, "con":0, "wis":0, "int":0, "cha":0
@@ -17,8 +19,6 @@ class Character: # this class handles everything related to processing informati
         "int":["int", "arcana", "history", "medicine", "investigation", "nature", "religion"],
         "cha":["cha", "deception", "intimidation", "performance", "persuasion"]
     }
-
-    char_name="" # character directory
 
 # CONSTRUCTOR FUNCTIONS ----------------------------------------------------------------------------
     def construct_StatsProficiencies(self):
@@ -39,15 +39,14 @@ class Character: # this class handles everything related to processing informati
 
             for index in range(0, len(self.proficiencies[stat])): # assign proficiencies
                 if self.proficiencies[stat][index] in temp_profs:
-                    self.proficiencies[stat][index]='*'+self.proficiencies[stat][index]
-        # doesn't allow for custom proficiencies currently       
+                    self.proficiencies[stat][index]='*'+self.proficiencies[stat][index]     
 
     def __init__(self, c_name):
         self.char_name=c_name
         self.construct_StatsProficiencies()
-# END OF CONSTRUCTOR FUNCS ---------------------------------------------------------------------------------
 # DESTRUCTOR FUNCS -----------------------------------------------------------------------------------------
-    def saveStatsProfBProfs(self): # unofficial destructor. Might have to main one in main.py
+# sec1 = Prof bonus, Profs, Stats
+    def save_sec1(self): 
         with open(os.path.join(os.getcwd(), "characters", self.char_name, "stats.txt"), 'w') as stats_file:
             stats_file.write(str(self.prof_bonus)+'\n')
             
@@ -64,28 +63,23 @@ class Character: # this class handles everything related to processing informati
                 
                 if stat!="cha": # don't need the extra . at the end, just leads to an extra empty string
                     stats_file.write('.')
+
         stats_file.close()
-# FUNCTIONALITY -------------------------------------------------------------------------------------------
-    def roll(self, ndice, tdice):
-        rolls=[]
-        for num in range(ndice):
-            rolls.append(random.randint(1, tdice))
-        return rolls
+
+    def saveAll(self): # will be expanded as the program grows
+        self.saveStatsProfBProfs()
 
 class Init: # this class creates, writes, and deletes files
     mdir="" # main directory holding all character subdirectories
-    chars=[]
 
-    def createChar(self, char_name): # I suspect this function will only get more complex. Also why not have this
-        # in the other class? Jesus christ this is so overengineered
-        # I don't have this in the other class because it's not opening anything or processing any information
+    def createChar(self, char_name): # this will expand with the program
         try:
             os.mkdir(os.path.join(self.mdir, char_name))
             with open(os.path.join(self.mdir, char_name, "stats.txt"), 'w') as stats_file:
                 stats_file.write("0\nstr00.dex00.con00.int00.wis00.cha00")
             stats_file.close()
         except Exception as e:
-            print(f"Error: {e}. This is in the terminal which is wrong, but whatever. I'll fucking figure it out")
+            print(f"Error: {e}. This is in the terminal which is wrong, but whatever. I'll figure it out")
 
     def editChar(self, char_name, new_name):
         os.rename(os.path.join(self.mdir, char_name), os.path.join(self.mdir, new_name))
@@ -93,9 +87,11 @@ class Init: # this class creates, writes, and deletes files
 
     def deleteChar(self, char_name):
         shutil.rmtree(os.path.join(self.mdir, char_name))
-# -------------------------------------------------------------------------------------------
+# CONSTRUCTOR ----------------------------------------------------------------------------------------------
     def __init__(self):
         if not os.path.isdir(os.path.join(os.getcwd(), "characters")):
+            # I should add error handling instead of just forcing it to work no matter where the exe is located
+            # but also whatever. Don't fuck with the files and you'll be fine
             os.mkdir(os.path.join(os.getcwd(), "characters"))
 
         self.mdir=os.path.join(os.getcwd(), "characters")
